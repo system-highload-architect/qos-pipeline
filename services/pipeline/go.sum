@@ -1,0 +1,8 @@
+github.com/system-highload-architect/go-solutions/data/timedcache v0.0.0-20260627144220-57bc2fba92b9 h1:R7YnA4KRyM2elJAPFTw8YRiIF1TIiWTYq57Sno+H6Fw=
+github.com/system-highload-architect/go-solutions/data/timedcache v0.0.0-20260627144220-57bc2fba92b9/go.mod h1:rTp/xZUuuU7x4sLl0K4rBgmq3YbP/b0ASQtSLQ3+UsE=
+github.com/system-highload-architect/go-solutions/math/statistics v0.0.0-20260627144220-57bc2fba92b9 h1:jgWAftOfkrCPGfupDe+oaA1s/62fE509BW5VfjJpAEo=
+github.com/system-highload-architect/go-solutions/math/statistics v0.0.0-20260627144220-57bc2fba92b9/go.mod h1:2rJBxxINkBZsE57d+Vq88jkUVjLkvg3pFeWXINjb6i4=
+github.com/system-highload-architect/go-solutions/net/backpressure v0.0.0-20260627144220-57bc2fba92b9 h1:zuCk0tVhJFR4XwO+hh7lWu/7rxCL59a41TyCVpPEq1Q=
+github.com/system-highload-architect/go-solutions/net/backpressure v0.0.0-20260627144220-57bc2fba92b9/go.mod h1:T0/SKUxpU9slRpieNso/A2a+0bRVAzy3gya2griavzk=
+github.com/system-highload-architect/go-solutions/net/breaker v0.0.0-20260627144220-57bc2fba92b9 h1:g+QPI5J9YfsO8n0cPo2bsGxTonTCk76RoaYhuUuADIo=
+github.com/system-highload-architect/go-solutions/net/breaker v0.0.0-20260627144220-57bc2fba92b9/go.mod h1:SjtPws59CtlHFYkkbULzxC3N1YGeBkTZCXsZAmV5YkA=
