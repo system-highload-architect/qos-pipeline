@@ -68,12 +68,11 @@ func main() {
 	defer metrics.Shutdown(context.Background())
 
 	// 4. Kafka продюсер
-	// publisher, err := kafka.NewPublisher(cfg.Kafka.Brokers, cfg.Kafka.Topic, log)
-	publisher := &kafka.MockPublisher{Logger: log}
-	// if err != nil {
-	// 	log.Error("failed to create kafka publisher", "error", err)
-	// 	os.Exit(1)
-	// }
+	publisher, err := kafka.NewPublisher(cfg.Kafka.Brokers, cfg.Kafka.Topic, log)
+	if err != nil {
+		log.Error("failed to create kafka publisher", "error", err)
+		os.Exit(1)
+	}
 	defer publisher.Close()
 
 	// 5. gRPC сервер

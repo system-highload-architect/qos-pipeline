@@ -1,4 +1,3 @@
-// services/pipeline/cmd/main.go (обновлённый)
 package main
 
 import (
@@ -7,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/system-highload-architect/go-solutions/config"
 	"github.com/system-highload-architect/go-solutions/net/backpressure"
 	"github.com/system-highload-architect/go-solutions/shutdown"
 	"github.com/system-highload-architect/qos-pipeline/services/pipeline/internal/adapters/kafka"
@@ -14,11 +14,34 @@ import (
 	"github.com/system-highload-architect/qos-pipeline/services/pipeline/internal/stages"
 )
 
+// AppConfig – корневая конфигурация сервиса Pipeline.
+type AppConfig struct {
+	Kafka KafkaConfig `yaml:"kafka"`
+	Log   LogConfig   `yaml:"log"`
+}
+
+type KafkaConfig struct {
+	Brokers []string `yaml:"brokers" env:"KAFKA_BROKERS"`
+	Topic   string   `yaml:"topic" env:"KAFKA_TOPIC"`
+}
+
+type LogConfig struct {
+	Level  string `yaml:"level" env:"LOG_LEVEL"`
+	Format string `yaml:"format" env:"LOG_FORMAT"`
+}
+
 func main() {
+	// Загружаем конфигурацию
+	var cfg AppConfig
+	if err := config.Load(&cfg, config.WithPath("configs/dev.yaml")); err != nil {
+		slog.Error("cannot load config", "error", err)
+		os.Exit(1)
+	}
+
 	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	log.Info("starting pipeline")
 
-	// ---------- Стадии ----------
+	// Стадии
 	normalizeStage := func(ctx context.Context, raw []byte) (domain.NormalizedMetric, error) {
 		return stages.NormalizeStage(ctx, raw)
 	}
@@ -33,7 +56,7 @@ func main() {
 		return stages.WriteStage(ctx, agg)
 	}
 
-	// ---------- Конвейер ----------
+	// Конвейер
 	pipe := backpressure.NewPipeline[[]byte](
 		[]backpressure.Stage[[]byte]{
 			func(ctx context.Context, raw []byte) error {
@@ -59,9 +82,7 @@ func main() {
 	input, output := pipe.Run()
 	defer close(input)
 
-	// ---------- Потребитель данных ----------
-	// Временно используем мок, чтобы продемонстрировать работу без Kafka.
-	// Позже заменим на реальный Consumer:
+	// Потребитель Kafka
 	// consumer := kafka.NewConsumer(cfg.Kafka.Brokers, cfg.Kafka.Topic, "pipeline-group", log)
 	consumer := &kafka.MockConsumer{
 		Logger: log,
@@ -71,6 +92,7 @@ func main() {
 			[]byte(`{"source":"web-2","metrics":[{"name":"http_requests_total","value":200,"labels":{"method":"GET"},"timestamp_unix":1719500002}]}`),
 		},
 	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	consumer.Start(ctx, input)
@@ -80,7 +102,7 @@ func main() {
 		}
 	}()
 
-	// ---------- Graceful shutdown ----------
+	// Graceful shutdown
 	shutdownMgr := shutdown.NewManager(10 * time.Second)
 	shutdownMgr.SetLogger(log)
 	shutdownMgr.Add("pipeline", 0, func(ctx context.Context) error {

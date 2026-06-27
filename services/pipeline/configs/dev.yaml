@@ -1,0 +1,8 @@
+kafka:
+  brokers:
+    - "localhost:9092"   # или kafka:29092 внутри Docker
+  topic: "raw_metrics"
+
+log:
+  level: "debug"
+  format: "json"
