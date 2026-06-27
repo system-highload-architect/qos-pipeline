@@ -1,18 +1,26 @@
 services:
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
+  postgres:
+    image: postgres:16-alpine
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
+      POSTGRES_USER: rtb
+      POSTGRES_PASSWORD: rtbpass
+      POSTGRES_DB: rtb
+    expose:
+      - "5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rtb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     depends_on:
       - zookeeper
-    ports:
-      - "9092:9092"
+    expose:
+      - "29092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -26,21 +34,74 @@ services:
       timeout: 5s
       retries: 5
 
-  postgres:
-    image: postgres:16-alpine
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    expose:
+      - "2181"
     environment:
-      POSTGRES_USER: qos
-      POSTGRES_PASSWORD: qospass
-      POSTGRES_DB: qosdb
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  ingester:
+    build:
+      context: .
+      dockerfile: ./services/ingester/Dockerfile
+    expose:
+      - "9001"
+    environment:
+      SERVER_PORT: 9001
+      KAFKA_BROKERS: "kafka:29092"
+      KAFKA_TOPIC: "raw_metrics"
+      LOG_LEVEL: "debug"
+      LOG_FORMAT: "json"
+      METRICS_USE_OTLP: "false"
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  pipeline:
+    build:
+      context: .
+      dockerfile: ./services/pipeline/Dockerfile
+    environment:
+      KAFKA_BROKERS: "kafka:29092"
+      KAFKA_TOPIC: "raw_metrics"
+      LOG_LEVEL: "debug"
+      LOG_FORMAT: "json"
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  aggregator:
+    build:
+      context: .
+      dockerfile: ./services/aggregator/Dockerfile
+    expose:
+      - "9002"
+    environment:
+      SERVER_PORT: 9002
+      DATABASE_DSN: "postgres://rtb:rtbpass@postgres:5432/rtb?sslmode=disable"
+      LOG_LEVEL: "debug"
+      LOG_FORMAT: "json"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  gateway:
+    build:
+      context: .
+      dockerfile: ./services/gateway/Dockerfile
     ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U qos"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - "8080:8080"
+    environment:
+      SERVER_PORT: 8080
+      GRPC_INGESTER: "ingester:9001"
+      GRPC_AGGREGATOR: "http://aggregator:9002"
+      LOG_LEVEL: "debug"
+      LOG_FORMAT: "json"
+    depends_on:
+      - ingester
+      - aggregator
 
 volumes:
   pgdata:

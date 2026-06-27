@@ -1,0 +1,9 @@
+server:
+  port: 9002
+
+database:
+  dsn: ""
+
+log:
+  level: "debug"
+  format: "json"
