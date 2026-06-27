@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package ingester.v1;
+option go_package = "github.com/system-highload-architect/qos-pipeline/pb/ingester/v1;ingesterv1";
+
+// IngesterService принимает метрики от клиентов.
+service IngesterService {
+  rpc IngestMetrics (IngestRequest) returns (IngestResponse);
+}
+
+// Запрос: пакет метрик от одного источника.
+message IngestRequest {
+  string source = 1;             // кто отправляет метрики (например, "web-server-1")
+  repeated Metric metrics = 2;   // список метрик
+}
+
+// Одна метрика.
+message Metric {
+  string name = 1;               // http_requests_total
+  double value = 2;              // числовое значение
+  map<string, string> labels = 3; // method=GET, status=200 и т.д.
+  int64 timestamp_unix = 4;      // время срабатывания метрики (Unix секунды)
+}
+
+// Ответ: подтверждение приёма.
+message IngestResponse {
+  bool accepted = 1;
+  int32 count = 2;               // сколько метрик принято
+}

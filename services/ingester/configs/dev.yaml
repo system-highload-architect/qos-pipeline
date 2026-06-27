@@ -1,0 +1,14 @@
+server:
+  port: 9001
+
+kafka:
+  brokers:
+    - "kafka:29092"
+  topic: "raw_metrics"
+
+log:
+  level: "debug"
+  format: "json"
+
+metrics:
+  use_otlp: false
