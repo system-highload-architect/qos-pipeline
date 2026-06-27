@@ -13,6 +13,45 @@ This document describes how to run the system: from quick Docker deployment to l
 
 ---
 
+## 🇬🇧 Preparing the Go workspace / 🇷🇺 Подготовка Go workspace
+
+**This step is mandatory before any other operation** (both Docker and local development).  
+**Этот шаг обязателен перед всеми остальными** (как для Docker, так и для локальной разработки).
+
+The project uses a **Go workspace** to manage multiple interdependent modules without `replace` directives.  
+Проект использует **Go workspace** для управления несколькими взаимозависимыми модулями без директив `replace`.
+
+Run the following script **from the project root** – it will initialise the workspace, download all dependencies, and build every service.  
+Выполните следующий скрипт **из корня проекта** – он инициализирует workspace, скачает все зависимости и соберёт все сервисы.
+
+```bash
+# Инициализируем workspace, если его нет
+if [ ! -f go.work ]; then
+  go work init
+  go work use -r .
+fi
+
+# Синхронизируем и подтягиваем зависимости
+go work sync
+find . -name "go.mod" -execdir go mod tidy \;
+go build ./...
+```
+
+**What this script does / Что делает скрипт:**
+1. Creates `go.work` (if missing) and automatically adds all modules.  
+   Создаёт `go.work` (если он отсутствует) и автоматически добавляет в него все модули.
+2. Synchronises dependencies between modules.  
+   Синхронизирует зависимости между модулями.
+3. Runs `go mod tidy` in every module to fetch missing packages.  
+   Выполняет `go mod tidy` в каждом модуле, чтобы подтянуть недостающие пакеты.
+4. Builds all services.  
+   Собирает все сервисы.
+
+Now you are ready to start the platform – either via Docker or locally.  
+Теперь вы готовы запустить платформу – либо через Docker, либо локально.
+
+---
+
 ## 🇬🇧 Quick Start (Production‑like environment) / 🇷🇺 Быстрый старт (Production‑like окружение)
 
 1. Clone the repository and navigate to its root:
@@ -21,16 +60,19 @@ This document describes how to run the system: from quick Docker deployment to l
    cd qos-pipeline
    ```
 
-2. Start all services and databases with a single command:
+2. **Complete the workspace preparation described above.**  
+   **Выполните подготовку workspace, описанную выше.**
+
+3. Start all services and databases with a single command:
    ```bash
    docker compose up --build -d
    ```
    The first build may take a few minutes. Subsequent runs (`docker compose up -d`) will be instant.
 
-3. Open [http://localhost:8080](http://localhost:8080) in your browser – this is the dashboard.  
+4. Open [http://localhost:8080](http://localhost:8080) in your browser – this is the dashboard.  
    **Note:** In the current demo version, the dashboard is not yet available. Use the GraphQL playground instead: [http://localhost:8080/graphql](http://localhost:8080/graphql).
 
-4. **Done!** You can send test metrics and query GraphQL.
+5. **Done!** You can send test metrics and query GraphQL.
 
 ---
 
@@ -56,12 +98,15 @@ Full variable lists are available in `docker-compose.yml` and `services/*/config
 
 If you want to run services natively (Go) while databases run in Docker:
 
-1. Start the infrastructure containers:
+1. Complete the **workspace preparation** described at the beginning.  
+   Выполните **подготовку workspace**, описанную в начале.
+
+2. Start the infrastructure containers:
    ```bash
    docker compose up -d postgres kafka
    ```
 
-2. In separate terminals, launch the services:
+3. In separate terminals, launch the services:
    ```bash
    # Ingester
    cd services/ingester && go run ./cmd
@@ -75,7 +120,7 @@ If you want to run services natively (Go) while databases run in Docker:
 
    Services read configuration from `configs/dev.yaml`, where database addresses are `localhost`. Ensure the corresponding ports are exposed in `docker-compose.yml`.
 
-3. The Gateway will serve the GraphQL playground at `http://localhost:8080/graphql`.
+4. The Gateway will serve the GraphQL playground at `http://localhost:8080/graphql`.
 
 ---
 
