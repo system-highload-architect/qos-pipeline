@@ -1,36 +1,38 @@
-## План
+# 🇬🇧 QoS Pipeline / 🇷🇺 QoS Pipeline
 
-- **Высоконагруженные Pipeline‑конвейеры** (ядро системы).
-- **SLO/SLA/SLI** (целевая бизнес‑ценность).
-- **GraphQL** для сложных аналитических запросов (метрики с фильтрами, группировками, соединениями по разным источникам).
-- **Продвинутую работу с PostgreSQL** (материализованные представления, индексы, хранимые процедуры, пул соединений pgx).
-- **Алгоритмы производительности** (процентили, скользящие окна, экспоненциальное сглаживание, Radix Sort для сортировки событий).
-- **Production‑ready код** с circuit breaker’ами, идемпотентностью, graceful shutdown, тестами testify/suite.
-- **React‑дашборд** с интерактивными графиками, панелью управления конвейером и визуализацией графа зависимостей сервисов.
+**🇬🇧** High‑performance observability platform for ingesting, processing, and analysing service‑level metrics (SLI/SLO/SLA) with a multi‑stage backpressure pipeline, GraphQL API, and PostgreSQL storage.  
+**🇷🇺** Высокопроизводительная платформа наблюдаемости для приёма, обработки и анализа метрик уровня обслуживания (SLI/SLO/SLA) с многостадийным конвейером на backpressure, GraphQL API и хранением в PostgreSQL.
 
-Таким образом, один проект закроет все твои цели, и мы будем двигаться последовательно, шаг за шагом, без хаоса.
+## 🇬🇧 Architecture / 🇷🇺 Архитектура
 
----
+```mermaid
+graph TD
+    Client[Клиент / Браузер] -->|REST / GraphQL| Gateway
+    Gateway -->|gRPC| Ingester
+    Gateway -->|HTTP proxy| Aggregator
+    Ingester -->|Kafka| Pipeline
+    Pipeline -->|Aggregates| Aggregator
+    Aggregator -->|SQL| PostgreSQL
+```
 
-### 🧭 План развития QoS Observer Pro
+**🇬🇧** The platform consists of four microservices:  
+**🇷🇺** Платформа состоит из четырёх микросервисов:
 
-1.  **Ingester + Pipeline Core** (уже спроектировали)  
-    → демонстрация backpressure, атомарных счётчиков, масштабирования воркеров.
-2.  **PostgreSQL‑слой: миграции, хранимые процедуры, индексы**  
-    → оптимизация запросов, материализованные представления для агрегатов.
-3.  **GraphQL API** (вместо или дополнительно к REST)  
-    → сложные запросы к метрикам: «покажи доступность за последние 30 дней для сервисов с p99 > 200 мс, сгруппировав по региону».
-4.  **Алгоритмический слой**  
-    → процентили, окна, прогнозирование на основе `statistics` и `timeseries` из `go‑solutions`.
-5.  **Фронтенд‑дашборд**  
-    → управление SLO, мониторинг конвейера, экспорт отчётов, тёмная тема.
-6.  **CI/CD, нагрузочное тестирование, бенчмарки**  
-    → демонстрация стабильности под нагрузкой.
+- **Gateway** – entry point for metrics ingestion and GraphQL queries.  
+  **Gateway** – точка входа для приёма метрик и GraphQL‑запросов.
+- **Ingester** – receives metrics via gRPC and publishes them to Kafka.  
+  **Ingester** – принимает метрики через gRPC и публикует их в Kafka.
+- **Pipeline** – multi‑stage processing with backpressure, normalisation, filtering, aggregation, and storage.  
+  **Pipeline** – многостадийная обработка с backpressure: нормализация, фильтрация, агрегация, запись.
+- **Aggregator** – stores aggregates in PostgreSQL and exposes GraphQL API for SLO analysis.  
+  **Aggregator** – сохраняет агрегаты в PostgreSQL и предоставляет GraphQL API для анализа SLO.
 
----
+## 🇬🇧 Quick Start / 🇷🇺 Быстрый старт
 
-### 🚀 С чего начнём прямо сейчас?
+- [Launch Guide / Инструкция по запуску](launch.md)
 
-1.  **Инициализируем репозиторий и workspace** (команды ты уже выполнил).
-2.  **Пишем Ingester** — gRPC‑сервер, принимающий метрики и публикующий их в Kafka.
-3.  **Запускаем первый тест** — убедимся, что метрика проходит путь от клиента до Kafka.
+## 🇬🇧 Documentation / 🇷🇺 Документация
+
+- [Documentation Navigation / Навигация по документации](docs/index.md)
+- [SRS: Observability / ТЗ: Наблюдаемость](docs/srs/observability.md)
+- [SRS: Pipeline / ТЗ: Конвейер](docs/srs/pipeline.md)
